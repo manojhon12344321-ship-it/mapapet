@@ -11,56 +11,55 @@
 <body class="bg-gray-100 min-h-screen p-4 flex items-center justify-center">
 <div id="loading" class="text-center font-bold text-lg">🐾 Carregando dados do pet...</div>
 <div id="card" class="hidden max-w-md w-full bg-white rounded-2xl shadow-2xl overflow-hidden">
-  <img id="fotoPet" class="w-full h-80 object-cover">
-  <div class="p-6">
-    <h1 id="petNome" class="text-3xl font-black"></h1>
-    <p id="raca" class="text-gray-500 mb-1"></p>
-    <p id="cor" class="text-gray-500 mb-4 text-sm"></p>
-    <div class="bg-yellow-50 border-2 border-yellow-300 rounded-xl p-4 mb-4">
-      <p class="font-black">🚨 ESSE PET ESTÁ PERDIDO?</p>
-      <p class="text-sm mt-1">O dono está esperando seu contato! Você pode salvar esse pet agora clicando abaixo.</p>
-    </div>
-    <div class="space-y-3">
-      <button id="btnWhatsapp" class="w-full bg-green-500 text-white font-black py-4 rounded-xl text-lg shadow-lg">📲 AVISAR DONO NO WHATSAPP</button>
-      <button id="btnLocal" class="w-full bg-blue-500 text-white font-bold py-3 rounded-xl">📍 ENVIAR MINHA LOCALIZAÇÃO</button>
-      <button id="btnLigar" class="w-full bg-black text-white font-bold py-3 rounded-xl">📞 LIGAR PARA O DONO</button>
-    </div>
-    <div id="map" class="h-48 rounded-xl mt-4 hidden"></div>
-    <p id="donoNome" class="text-center text-xs text-gray-400 mt-4"></p>
-    <p class="text-center text-[10px] text-gray-300 mt-2">Powered by MapaPet</p>
-  </div>
+<img id="fotoPet" class="w-full h-80 object-cover bg-gray-200">
+<div class="p-6">
+<h1 id="petNome" class="text-3xl font-black"></h1>
+<p id="raca" class="text-gray-500 mb-1"></p>
+<p id="cor" class="text-gray-500 mb-4 text-sm"></p>
+<div class="bg-yellow-50 border-2 border-yellow-300 rounded-xl p-4 mb-4">
+<p class="font-black text-lg">🚨 ESSE PET ESTÁ PERDIDO?</p>
+<p class="text-sm mt-1">O dono está esperando seu contato! Clique no botão verde abaixo para avisar agora mesmo.</p>
+</div>
+<div class="space-y-3">
+<button id="btnWhatsapp" class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-4 rounded-xl text-lg shadow-lg transition">📲 AVISAR DONO NO WHATSAPP</button>
+<button id="btnLocal" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-xl transition">📍 ENVIAR MINHA LOCALIZAÇÃO PARA O DONO</button>
+<button id="btnLigar" class="w-full bg-black hover:bg-gray-800 text-white font-bold py-3 rounded-xl transition">📞 LIGAR PARA O DONO</button>
+</div>
+<div id="map" class="h-56 rounded-xl mt-4 hidden border-2"></div>
+<p id="donoNome" class="text-center text-xs text-gray-400 mt-4"></p>
+<p class="text-center text-[10px] text-gray-300 mt-2">Powered by MapaPet - Teixeira de Freitas</p>
+</div>
 </div>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, query, where, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 const firebaseConfig = {
-  apiKey: "SUA_API_KEY_AQUI",
+  apiKey: "AIzaSyBBnA9orBCf3j1_3nRHWcIctLe7aKMgcI8",
   authDomain: "mapapet-ad359.firebaseapp.com",
   projectId: "mapapet-ad359",
-  storageBucket: "mapapet-ad359.appspot.com",
-  messagingSenderId: "SEU_MESSAGING_ID",
-  appId: "SEU_APP_ID"
+  storageBucket: "mapapet-ad359.firebasestorage.app",
+  messagingSenderId: "268931015194",
+  appId: "1:268931015194:web:5ae634751c3be46ebe67a3"
 };
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-let petData = null; let shortIdGlobal = "";
 async function carregar(){
   const params = new URLSearchParams(window.location.search);
   const sid = params.get('sid');
-  shortIdGlobal = sid;
-  if(!sid){ document.getElementById('loading').textContent='Link inválido'; return; }
+  if(!sid){ document.getElementById('loading').textContent='Link inválido - código não encontrado'; return; }
   const q = query(collection(db, "clientes"), where("shortId", "==", sid));
   const snap = await getDocs(q);
-  if(snap.empty){ document.getElementById('loading').textContent='Pet não encontrado'; return; }
-  const data = snap.docs[0].data(); petData = data;
+  if(snap.empty){ document.getElementById('loading').textContent='Pet não encontrado - verifique o código'; return; }
+  const data = snap.docs[0].data();
   document.getElementById('loading').classList.add('hidden');
   document.getElementById('card').classList.remove('hidden');
   document.getElementById('petNome').textContent = data.petNome;
-  document.getElementById('raca').textContent = data.raca || '';
-  document.getElementById('cor').textContent = data.cor ? `Coleira: ${data.cor}` : '';
+  document.getElementById('raca').textContent = data.raca ? `Raça: ${data.raca}` : '';
+  document.getElementById('cor').textContent = data.cor ? `Obs: ${data.cor}` : '';
   document.getElementById('donoNome').textContent = `Responsável: ${data.donoNome}`;
-  if(data.foto) document.getElementById('fotoPet').src = data.foto;
-  const tel = data.telefone.replace(/\D/g,''); const telCom55 = tel.startsWith('55') ? tel : '55'+tel;
+  if(data.foto){ document.getElementById('fotoPet').src = data.foto; } else { document.getElementById('fotoPet').src = 'https://via.placeholder.com/400x320?text=Sem+Foto'; }
+  const tel = data.telefone.replace(/\D/g,'');
+  const telCom55 = tel.startsWith('55') ? tel : '55'+tel;
   document.getElementById('btnWhatsapp').onclick = async () => {
     try{ await addDoc(collection(db, "notificacoes"), { shortId: sid, petNome: data.petNome, telefone: data.telefone, data: serverTimestamp(), tipo: 'whatsapp' }); }catch(e){}
     const msg = `Olá! Encontrei seu pet ${data.petNome}! Vi pela tag MapaPet (código ${sid}). Onde você está?`;
@@ -68,17 +67,17 @@ async function carregar(){
   };
   document.getElementById('btnLigar').onclick = () => { window.open(`tel:+${telCom55}`, '_self'); };
   document.getElementById('btnLocal').onclick = () => {
-    if(!navigator.geolocation){ alert('Geolocalização não suportada'); return; }
+    if(!navigator.geolocation){ alert('Seu celular não permite localização'); return; }
     navigator.geolocation.getCurrentPosition(async pos => {
       const lat = pos.coords.latitude; const lng = pos.coords.longitude;
       try{ await addDoc(collection(db, "notificacoes"), { shortId: sid, petNome: data.petNome, lat, lng, data: serverTimestamp(), tipo: 'localizacao' }); }catch(e){}
       document.getElementById('map').classList.remove('hidden');
       const map = L.map('map').setView([lat, lng], 16);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-      L.marker([lat, lng]).addTo(map).bindPopup('Pet encontrado aqui!').openPopup();
-      const msgLoc = `Encontrei seu pet ${data.petNome}! Minha localização: https://www.google.com/maps?q=${lat},${lng}`;
+      L.marker([lat, lng]).addTo(map).bindPopup('📍 Pet encontrado aqui!').openPopup();
+      const msgLoc = `Encontrei seu pet ${data.petNome}! Minha localização exata: https://www.google.com/maps?q=${lat},${lng} - Código ${sid}`;
       window.open(`https://wa.me/${telCom55}?text=${encodeURIComponent(msgLoc)}`, '_blank');
-    });
+    }, () => { alert('Permita o acesso à localização para enviar ao dono'); });
   };
 }
 carregar();
