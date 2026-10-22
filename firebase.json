@@ -4,7 +4,8 @@
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       { "source": "/p/:sid", "destination": "/pet-final.html" },
-      { "source": "/p/**", "destination": "/pet-final.html" }
+      { "source": "/p/**", "destination": "/pet-final.html" },
+      { "source": "**", "destination": "/index.html" }
     ]
   }
 }
