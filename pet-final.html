@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pet Encontrado - MapaPet</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 flex items-center justify-center">
+<div id="loading" class="text-center font-bold text-lg">🐾 Carregando dados do pet...</div>
+<div id="card" class="hidden max-w-md w-full bg-white rounded-2xl shadow-2xl overflow-hidden">
+  <img id="fotoPet" class="w-full h-80 object-cover">
+  <div class="p-6">
+    <h1 id="petNome" class="text-3xl font-black"></h1>
+    <p id="raca" class="text-gray-500 mb-1"></p>
+    <p id="cor" class="text-gray-500 mb-4 text-sm"></p>
+    <div class="bg-yellow-50 border-2 border-yellow-300 rounded-xl p-4 mb-4">
+      <p class="font-black">🚨 ESSE PET ESTÁ PERDIDO?</p>
+      <p class="text-sm mt-1">O dono está esperando seu contato! Você pode salvar esse pet agora clicando abaixo.</p>
+    </div>
+    <div class="space-y-3">
+      <button id="btnWhatsapp" class="w-full bg-green-500 text-white font-black py-4 rounded-xl text-lg shadow-lg">📲 AVISAR DONO NO WHATSAPP</button>
+      <button id="btnLocal" class="w-full bg-blue-500 text-white font-bold py-3 rounded-xl">📍 ENVIAR MINHA LOCALIZAÇÃO</button>
+      <button id="btnLigar" class="w-full bg-black text-white font-bold py-3 rounded-xl">📞 LIGAR PARA O DONO</button>
+    </div>
+    <div id="map" class="h-48 rounded-xl mt-4 hidden"></div>
+    <p id="donoNome" class="text-center text-xs text-gray-400 mt-4"></p>
+    <p class="text-center text-[10px] text-gray-300 mt-2">Powered by MapaPet</p>
+  </div>
+</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, query, where, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const firebaseConfig = {
+  apiKey: "SUA_API_KEY_AQUI",
+  authDomain: "mapapet-ad359.firebaseapp.com",
+  projectId: "mapapet-ad359",
+  storageBucket: "mapapet-ad359.appspot.com",
+  messagingSenderId: "SEU_MESSAGING_ID",
+  appId: "SEU_APP_ID"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+let petData = null; let shortIdGlobal = "";
+async function carregar(){
+  const params = new URLSearchParams(window.location.search);
+  const sid = params.get('sid');
+  shortIdGlobal = sid;
+  if(!sid){ document.getElementById('loading').textContent='Link inválido'; return; }
+  const q = query(collection(db, "clientes"), where("shortId", "==", sid));
+  const snap = await getDocs(q);
+  if(snap.empty){ document.getElementById('loading').textContent='Pet não encontrado'; return; }
+  const data = snap.docs[0].data(); petData = data;
+  document.getElementById('loading').classList.add('hidden');
+  document.getElementById('card').classList.remove('hidden');
+  document.getElementById('petNome').textContent = data.petNome;
+  document.getElementById('raca').textContent = data.raca || '';
+  document.getElementById('cor').textContent = data.cor ? `Coleira: ${data.cor}` : '';
+  document.getElementById('donoNome').textContent = `Responsável: ${data.donoNome}`;
+  if(data.foto) document.getElementById('fotoPet').src = data.foto;
+  const tel = data.telefone.replace(/\D/g,''); const telCom55 = tel.startsWith('55') ? tel : '55'+tel;
+  document.getElementById('btnWhatsapp').onclick = async () => {
+    try{ await addDoc(collection(db, "notificacoes"), { shortId: sid, petNome: data.petNome, telefone: data.telefone, data: serverTimestamp(), tipo: 'whatsapp' }); }catch(e){}
+    const msg = `Olá! Encontrei seu pet ${data.petNome}! Vi pela tag MapaPet (código ${sid}). Onde você está?`;
+    window.open(`https://wa.me/${telCom55}?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+  document.getElementById('btnLigar').onclick = () => { window.open(`tel:+${telCom55}`, '_self'); };
+  document.getElementById('btnLocal').onclick = () => {
+    if(!navigator.geolocation){ alert('Geolocalização não suportada'); return; }
+    navigator.geolocation.getCurrentPosition(async pos => {
+      const lat = pos.coords.latitude; const lng = pos.coords.longitude;
+      try{ await addDoc(collection(db, "notificacoes"), { shortId: sid, petNome: data.petNome, lat, lng, data: serverTimestamp(), tipo: 'localizacao' }); }catch(e){}
+      document.getElementById('map').classList.remove('hidden');
+      const map = L.map('map').setView([lat, lng], 16);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+      L.marker([lat, lng]).addTo(map).bindPopup('Pet encontrado aqui!').openPopup();
+      const msgLoc = `Encontrei seu pet ${data.petNome}! Minha localização: https://www.google.com/maps?q=${lat},${lng}`;
+      window.open(`https://wa.me/${telCom55}?text=${encodeURIComponent(msgLoc)}`, '_blank');
+    });
+  };
+}
+carregar();
+</script>
+</body>
+</html>
