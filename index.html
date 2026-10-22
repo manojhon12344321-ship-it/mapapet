@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MapaPet - Painel Completo</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+<div class="max-w-6xl mx-auto p-4">
+  <h1 class="text-4xl font-black text-center py-6">🐾 MapaPet - Painel</h1>
+  
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- CADASTRO -->
+    <div class="bg-white rounded-2xl shadow-xl p-6">
+      <h2 class="text-xl font-bold mb-4">Cadastrar Nova Tag</h2>
+      <div class="space-y-3">
+        <input id="donoNome" class="w-full border rounded-lg p-3" placeholder="Nome do Dono *">
+        <input id="telefone" class="w-full border rounded-lg p-3" placeholder="WhatsApp com DDD * ex: 73999999999">
+        <div class="grid grid-cols-2 gap-3">
+          <input id="petNome" class="w-full border rounded-lg p-3" placeholder="Nome do Pet *">
+          <input id="raca" class="w-full border rounded-lg p-3" placeholder="Raça / Porte">
+        </div>
+        <input id="cor" class="w-full border rounded-lg p-3" placeholder="Cor da coleira">
+        <input id="foto" type="file" accept="image/*" class="w-full border rounded-lg p-3">
+        <img id="preview" class="hidden w-full h-48 object-cover rounded-xl">
+        <button id="btnSalvar" class="w-full bg-black text-white font-bold py-4 rounded-xl hover:bg-gray-800">GERAR TAG + QR CODE</button>
+      </div>
+      <div id="resultado" class="hidden mt-6 border-t pt-4">
+        <p class="text-center font-bold text-green-600">✅ TAG GERADA!</p>
+        <div class="flex justify-center my-4"><div id="qrcode"></div></div>
+        <p id="linkTag" class="font-mono bg-gray-100 p-2 rounded text-xs break-all text-center"></p>
+        <p id="linkCurto" class="font-mono bg-black text-white p-2 rounded text-xs break-all text-center mt-2"></p>
+        <p class="text-xs text-center text-gray-500 mt-2">O link curto é o que vai impresso na tag física</p>
+      </div>
+    </div>
+
+    <!-- LISTA E MAPA -->
+    <div class="space-y-6">
+      <div class="bg-white rounded-2xl shadow-xl p-6">
+        <h2 class="text-xl font-bold mb-3">📍 Mapa de Clientes</h2>
+        <div id="map" class="h-64 rounded-xl"></div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-xl p-6">
+        <h2 class="text-xl font-bold mb-3">🔔 Notificações - Pets Encontrados</h2>
+        <div id="listaNotificacoes" class="space-y-2 max-h-48 overflow-auto"><p class="text-gray-400 text-sm">Nenhuma notificação ainda</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl shadow-xl p-6 mt-6">
+    <h2 class="text-xl font-bold mb-4">📋 Clientes Cadastrados</h2>
+    <div id="listaClientes" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "SUA_API_KEY_AQUI",
+  authDomain: "mapapet-ad359.firebaseapp.com",
+  projectId: "mapapet-ad359",
+  storageBucket: "mapapet-ad359.appspot.com",
+  messagingSenderId: "SEU_MESSAGING_ID",
+  appId: "SEU_APP_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let fotoBase64 = "";
+document.getElementById('foto').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    fotoBase64 = ev.target.result;
+    const img = document.getElementById('preview');
+    img.src = fotoBase64;
+    img.classList.remove('hidden');
+  };
+  reader.readAsDataURL(file);
+});
+
+function gerarShortId(){ return Math.random().toString(36).substring(2,7).toUpperCase(); }
+
+const map = L.map('map').setView([-17.5, -39.7], 5);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+async function carregarClientes(){
+  const q = query(collection(db, "clientes"), orderBy("criadoEm", "desc"));
+  const snap = await getDocs(q);
+  const lista = document.getElementById('listaClientes');
+  lista.innerHTML = "";
+  snap.forEach(doc => {
+    const d = doc.data();
+    const div = document.createElement('div');
+    div.className = "border rounded-xl p-3";
+    div.innerHTML = `
+      <img src="${d.foto || 'https://via.placeholder.com/150'}" class="w-full h-32 object-cover rounded-lg mb-2">
+      <p class="font-bold">${d.petNome}</p>
+      <p class="text-sm text-gray-500">${d.donoNome} - ${d.telefone}</p>
+      <p class="text-xs font-mono bg-gray-100 p-1 rounded mt-1">/p/${d.shortId}</p>
+      <a href="pet-final.html?sid=${d.shortId}" target="_blank" class="text-xs text-blue-600 underline">Ver página</a>
+    `;
+    lista.appendChild(div);
+  });
+}
+
+async function carregarNotificacoes(){
+  try{
+    const q = query(collection(db, "notificacoes"), orderBy("data", "desc"));
+    const snap = await getDocs(q);
+    const lista = document.getElementById('listaNotificacoes');
+    if(snap.empty) return;
+    lista.innerHTML = "";
+    snap.forEach(doc => {
+      const d = doc.data();
+      const div = document.createElement('div');
+      div.className = "border rounded-lg p-2 text-sm";
+      div.innerHTML = `<b>${d.petNome || ''}</b> - ${d.shortId} - ${d.data?.toDate ? d.data.toDate().toLocaleString() : ''}`;
+      lista.appendChild(div);
+    });
+  }catch(e){}
+}
+
+document.getElementById('btnSalvar').addEventListener('click', async () => {
+  const donoNome = document.getElementById('donoNome').value.trim();
+  const telefone = document.getElementById('telefone').value.replace(/\D/g,'').trim();
+  const petNome = document.getElementById('petNome').value.trim();
+  const raca = document.getElementById('raca').value.trim();
+  const cor = document.getElementById('cor').value.trim();
+  if(!donoNome || !telefone || !petNome){ alert('Preencha Dono, WhatsApp e Pet'); return; }
+  const btn = document.getElementById('btnSalvar');
+  btn.textContent = "SALVANDO..."; btn.disabled = true;
+  const shortId = gerarShortId();
+  try{
+    await addDoc(collection(db, "clientes"), { shortId, donoNome, telefone, petNome, raca, cor, foto: fotoBase64, criadoEm: serverTimestamp() });
+    const link = `https://mapapet-ad359.web.app/pet-final.html?sid=${shortId}`;
+    const linkCurto = `https://mapapet-ad359.web.app/p/${shortId}`;
+    document.getElementById('resultado').classList.remove('hidden');
+    document.getElementById('linkTag').textContent = link;
+    document.getElementById('linkCurto').textContent = linkCurto;
+    document.getElementById('qrcode').innerHTML = "";
+    new QRCode(document.getElementById('qrcode'), { text: link, width: 200, height: 200 });
+    carregarClientes();
+    btn.textContent = "GERADO! CADASTRAR OUTRO";
+    btn.disabled = false;
+    window.scrollTo(0, document.body.scrollHeight);
+  }catch(e){
+    alert('Erro: ' + e.message);
+    btn.textContent = "GERAR TAG + QR CODE"; btn.disabled = false;
+  }
+});
+
+carregarClientes();
+carregarNotificacoes();
+</script>
+</body>
+</html>
