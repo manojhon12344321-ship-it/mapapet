@@ -1,249 +1,68 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MapaPet - Seu melhor amigo nunca esteve tão seguro</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MapaPet Teixeira - Proteção que Salva</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700;900&display=swap');
-body{font-family:'Space Grotesk', sans-serif; background:#050a14; color:white; overflow-x:hidden;}
-.glow{box-shadow:0 0 40px rgba(34,211,238,0.5);}
-.pulse{animation:pulse 2s infinite;}
-@keyframes pulse{0%,100%{transform:scale(1); opacity:1}50%{transform:scale(1.2); opacity:0.7}}
-.float{animation:float 6s ease-in-out infinite;}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}
-</style>
+<style>@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;900&family=Inter:wght@400;700&display=swap'); .sg{font-family:'Space Grotesk'} body{font-family:'Inter'} @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}.pulse{animation:pulse 1.5s infinite}</style>
 </head>
-<body>
-
-<!-- HERO IMERSIVO -->
-<section class="relative min-h-[85vh] flex items-center overflow-hidden">
-<div class="absolute inset-0 bg-gradient-to-br from-blue-900/40 via-transparent to-cyan-900/30"></div>
-<div class="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center relative z-10 w-full">
-<div>
-<div class="flex gap-2 mb-4"><span class="bg-white/10 border border-cyan-400/20 px-3 py-1 rounded-full text-[11px]">🔋 Bateria 72h</span><span class="bg-white/10 border border-cyan-400/20 px-3 py-1 rounded-full text-[11px]">🛡️ Seguro & Protegido</span></div>
-<h1 class="text-6xl font-black leading-[0.9]">Seu melhor amigo<br><span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">nunca esteve</span><br>tão seguro</h1>
-<p class="text-gray-400 mt-6">Rastreamento em tempo real • QR Code Seguro • Localização 24/7<br>Quando seu pet se perde, Teixeira inteira vira rede de busca.</p>
-<div class="flex flex-wrap gap-3 mt-8">
-<button onclick="document.getElementById('dashboard').scrollIntoView({behavior:'smooth'})" class="bg-cyan-400 text-black px-8 py-4 rounded-full font-black glow">Ver Mapa Ao Vivo →</button>
-<button onclick="document.getElementById('cadastro').scrollIntoView({behavior:'smooth'})" class="border border-white/20 px-8 py-4 rounded-full">Ativar Seguro</button>
+<body class="bg-[#050a14] text-white">
+<header class="sticky top-0 z-50 bg-[#050a14]/90 backdrop-blur border-b border-white/10 p-4 flex justify-between">
+<div class="flex items-center gap-3"><span class="text-2xl">🐾</span><div><h1 class="sg font-black text-lg leading-none">MapaPet Teixeira</h1><p class="text-[10px] text-cyan-400">127 PETS PROTEGIDOS • AO VIVO</p></div></div>
+<div class="flex gap-2 items-center"><span id="count" class="bg-cyan-400 text-black px-3 py-1 rounded-full text-xs font-black">0 pets</span><a href="admin/" class="bg-white/10 px-3 py-1 rounded-full text-xs">🔒 Admin</a></div>
+</header>
+<div id="map" class="h-[48vh]"></div>
+<div class="bg-gradient-to-r from-cyan-500/10 to-orange-500/10 border-y border-cyan-400/20 p-3 flex justify-between text-xs"><span>🟢 <b id="tPerd">0</b> perdidos agora</span><span>🟢 Mapa atualiza sozinho</span><span>📍 Teixeira</span></div>
+<section class="max-w-5xl mx-auto p-4 grid md:grid-cols-2 gap-6 mt-6">
+<div class="bg-white text-black rounded-[28px] p-6 shadow-2xl">
+<h2 class="sg font-black text-2xl">Cadastrar Pet - 45 seg ⚡</h2>
+<p class="text-xs text-gray-500 mt-1">Foto obrigatória • Gera QR + NFC com mesmo link</p>
+<div class="grid gap-3 mt-4">
+<input id="tutorNome" class="border-2 border-black/10 p-3 rounded-xl font-bold" placeholder="Nome do Tutor *">
+<input id="tutorWhats" class="border-2 border-black/10 p-3 rounded-xl font-bold" placeholder="WhatsApp * (719...)">
+<div class="grid grid-cols-2 gap-3"><input id="petNome" class="border-2 border-black/10 p-3 rounded-xl font-bold" placeholder="Nome do Pet *"><input id="petRaca" class="border-2 border-black/10 p-3 rounded-xl" placeholder="Raça"></div>
+<div class="grid grid-cols-2 gap-3"><select id="petStatus" class="border-2 border-black/10 p-3 rounded-xl font-bold"><option value="seguro">✅ Seguro</option><option value="perdido">🚨 Perdido agora</option></select><input id="recompensa" class="border-2 border-black/10 p-3 rounded-xl" placeholder="Recompensa (R$)"></div>
+<input id="petEndereco" class="border-2 border-black/10 p-3 rounded-xl" placeholder="Bairro - Teixeira">
+<label class="border-2 border-dashed border-black/20 p-4 rounded-xl text-center cursor-pointer block"><span id="fotoLabel" class="text-sm font-bold">📸 CLIQUE PARA FOTO OBRIGATÓRIA *</span><input id="petFoto" type="file" accept="image/*" class="hidden"></label>
+<img id="preview" class="hidden w-full h-32 object-cover rounded-xl mt-2">
 </div>
-<div class="flex gap-8 mt-10 text-sm"><div><p class="text-3xl font-black text-cyan-400">1.247</p><p class="text-gray-500 text-xs">Pets protegidos</p></div><div><p class="text-3xl font-black text-cyan-400">98%</p><p class="text-gray-500 text-xs">Taxa de reencontro</p></div><div><p class="text-3xl font-black text-cyan-400">2min</p><p class="text-gray-500 text-xs">Tempo médio</p></div></div>
+<label class="flex gap-2 mt-4 text-[11px]"><input id="lgpd" type="checkbox" checked> Autorizo uso de localização (LGPD)</label>
+<button id="btnSalvar" class="w-full mt-4 bg-black text-white py-4 rounded-xl font-black text-lg">🚀 GERAR QR CODE + NFC</button>
+<div id="qrBox" class="hidden mt-6 bg-gray-900 text-white rounded-2xl p-5 text-center"><p class="font-black text-cyan-400">✅ PET CADASTRADO!</p><div id="qrcode" class="inline-block bg-white p-3 rounded-xl mt-3"></div><p id="link" class="text-xs mt-3 break-all text-cyan-400"></p><div class="grid grid-cols-2 gap-2 mt-4"><button onclick="copiarLink()" class="bg-white/10 py-2 rounded-xl text-xs">📋 Copiar link NFC</button><a id="abrirLink" target="_blank" class="bg-cyan-400 text-black py-2 rounded-xl text-xs font-black">🔍 Testar QR</a></div><p class="text-[10px] text-gray-400 mt-3">1. Imprima QR 2. Grave mesmo link no chip NFC com NFC Tools 3. Cole na coleira</p></div>
 </div>
-<div class="relative">
-<img src="https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=700" class="rounded-3xl w-full h-[520px] object-cover">
-<div class="absolute bottom-6 -right-6 bg-gradient-to-br from-gray-800 to-black border-2 border-cyan-400 rounded-2xl p-4 float glow"><div id="qrcode-hero" class="bg-white p-2 rounded-lg"></div><p class="text-[9px] mt-2 text-cyan-400 text-center">MAPAPET • QR CODE</p></div>
-<div class="absolute top-10 right-10 bg-black/80 backdrop-blur border border-cyan-400/30 rounded-2xl p-3"><p class="text-xs text-cyan-400">📍 Luna encontrada</p><p class="text-[10px] text-gray-400">0.8km • Oak Park • agora</p></div>
-</div>
-</div>
-</section>
-
-<!-- VISUAL 2 - DASHBOARD AO VIVO -->
-<section id="dashboard" class="bg-[#080d1a] border-y border-white/10 py-10">
-<div class="max-w-[1600px] mx-auto px-4">
-<div class="flex flex-wrap justify-between items-center mb-6 gap-4">
-<div class="flex items-center gap-3"><h2 class="text-2xl font-black">🐾 PetTrack Pro</h2><span class="bg-cyan-400/20 text-cyan-400 border border-cyan-400/30 px-3 py-1 rounded-full text-xs font-bold">LIVE • Ao Vivo</span></div>
-<div class="flex gap-2"><span class="bg-white/10 px-4 py-2 rounded-full text-xs">Live Map</span><span class="bg-white/5 px-4 py-2 rounded-full text-xs">Pets</span><span class="bg-white/5 px-4 py-2 rounded-full text-xs">QR Scan</span><span id="notifBadge" class="bg-red-500 text-white px-3 py-2 rounded-full text-xs">🔔 0</span></div>
-</div>
-
-<div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-<div class="lg:col-span-6 bg-[#0f1629] border border-white/10 rounded-2xl p-4">
-<div class="flex justify-between mb-3"><div><h3 class="font-black">Live Map — Pets Located</h3><p class="text-xs text-gray-400">Real-time tracking • <span id="count-pets">0 pets</span> encontrados • <span class="text-green-400">● Ao vivo</span></p></div></div>
-<div id="liveMap" class="h-[500px] rounded-xl"></div>
-<div class="flex gap-6 mt-4 text-xs"><span class="flex items-center gap-2"><span class="w-3 h-3 bg-cyan-400 rounded-full pulse"></span> Pet Located</span><span class="flex items-center gap-2"><span class="w-3 h-3 bg-orange-400 rounded-full"></span> Scanning</span><span class="flex items-center gap-2"><span class="w-3 h-3 bg-gray-500 rounded-full"></span> Offline</span></div>
-</div>
-
-<div class="lg:col-span-3 bg-[#0f1629] border border-white/10 rounded-2xl p-4">
-<h3 class="font-black">Pets Nearby</h3><p class="text-xs text-gray-400 mb-4">3D Live Cards • Atualização automática</p>
-<div id="petsNearby" class="space-y-4"></div>
-<div class="mt-6 grid grid-cols-3 gap-2 text-center border-t border-white/10 pt-4">
-<div><p class="text-xs text-gray-400">Pets Found Today</p><p id="statToday" class="text-2xl font-black text-cyan-400">0</p></div>
-<div><p class="text-xs text-gray-400">Active Trackers</p><p class="text-2xl font-black">24</p></div>
-<div><p class="text-xs text-gray-400">Coverage Area</p><p class="text-2xl font-black">98.2%</p></div>
-</div>
-</div>
-
-<div class="lg:col-span-3 space-y-4">
-<div class="bg-[#0f1629] border border-white/10 rounded-2xl p-4">
-<h3 class="font-black">QR Scan — Device Pairing</h3><p class="text-xs text-gray-400 mb-4">Scanning for trackers...</p>
-<div class="bg-black border border-cyan-400/30 rounded-xl p-6 text-center">
-<div class="w-32 h-32 mx-auto bg-white rounded-xl flex items-center justify-center relative"><div id="qrcode-scan"></div></div>
-<p class="text-[11px] mt-3">Hold device within frame</p><p class="text-xs text-cyan-400">Scanning... 70%</p>
-<div class="w-full bg-white/10 h-1 rounded-full mt-2"><div class="bg-cyan-400 h-1 w-[70%] rounded-full"></div></div>
-</div>
-</div>
-<div class="bg-[#0f1629] border border-white/10 rounded-2xl p-4">
-<div class="flex justify-between"><h3 class="font-black text-sm">Live Notifications</h3><span class="bg-white/10 px-2 py-1 rounded-full text-xs">🔔 Ao Vivo</span></div>
-<div id="liveNotifications" class="space-y-2 mt-4"></div>
-</div>
-</div>
-</div>
+<div class="space-y-4">
+<div class="bg-[#0f1629] border border-cyan-400/30 rounded-[28px] p-6"><h3 class="sg font-black">Petshops Parceiros 🤝</h3><div class="grid grid-cols-3 gap-3 mt-4 text-center text-xs"><div class="bg-black/50 rounded-xl p-3">🐶<br>Pet Central</div><div class="bg-black/50 rounded-xl p-3">🐾<br>Animalia</div><div class="bg-black/50 rounded-xl p-3">🐱<br>Vet Lar</div></div><p class="text-[11px] text-gray-400 mt-4">Seu petshop aqui? (73) 99999-9999 - R$29/mês ilimitado</p></div>
+<div class="bg-[#0f1629] border border-white/10 rounded-[28px] p-6"><h3 class="sg font-black">❤️ Depoimentos</h3><div class="mt-4 space-y-3 text-sm"><p class="bg-black/50 rounded-xl p-3">"Achei meu Thor em 20min pelo mapa!" - <b>Ana, São Francisco</b></p><p class="bg-black/50 rounded-xl p-3">"NFC na coleira é genial" - <b>Carlos, Vila Vargas</b></p></div></div>
 </div>
 </section>
-
-<!-- CADASTRO IMERSIVO 3 PASSOS -->
-<section id="cadastro" class="py-20 max-w-4xl mx-auto px-6">
-<div class="bg-white text-black rounded-[2rem] p-8 md:p-10 shadow-2xl">
-<h2 class="text-4xl font-black text-center">Ativar Proteção Agora</h2>
-<p class="text-center text-gray-500 mt-2 text-sm">Leva 45 segundos. Seu pet já sai protegido no mapa ao vivo.</p>
-<div class="flex justify-center gap-2 mt-8 mb-8"><div id="s1" class="bg-black text-white w-10 h-10 rounded-full flex items-center justify-center font-black">1</div><div class="w-12 h-1 bg-gray-200 mt-5"></div><div id="s2" class="bg-gray-200 w-10 h-10 rounded-full flex items-center justify-center font-black">2</div><div class="w-12 h-1 bg-gray-200 mt-5"></div><div id="s3" class="bg-gray-200 w-10 h-10 rounded-full flex items-center justify-center font-black">3</div></div>
-
-<div id="step1"><h3 class="font-black text-xl mb-4">1. Quem é o tutor?</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><input id="tutorNome" class="border-2 p-4 rounded-2xl" placeholder="Nome completo *"><input id="tutorWhats" class="border-2 p-4 rounded-2xl" placeholder="WhatsApp * (ex: 73999999999)"><input id="tutorEmail" class="border-2 p-4 rounded-2xl" placeholder="E-mail"><input id="tutorEndereco" class="border-2 p-4 rounded-2xl" placeholder="Bairro em Teixeira"></div><button onclick="go(2)" class="w-full mt-6 bg-black text-white py-4 rounded-2xl font-black">Continuar → Dados do Pet</button></div>
-
-<div id="step2" class="hidden"><h3 class="font-black text-xl mb-4">2. Quem é seu pet?</h3><div class="grid grid-cols-2 gap-4"><input id="petNome" class="border-2 p-4 rounded-2xl" placeholder="Nome do Pet *"><input id="petRaca" class="border-2 p-4 rounded-2xl" placeholder="Raça"><input id="petCor" class="border-2 p-4 rounded-2xl col-span-2" placeholder="Cor, porte, características"><input id="petFoto" type="file" accept="image/*" class="col-span-2 border-2 p-4 rounded-2xl"><img id="preview" class="hidden col-span-2 w-full h-64 object-cover rounded-2xl"></div><div class="flex gap-3 mt-6"><button onclick="go(1)" class="flex-1 border-2 py-4 rounded-2xl">← Voltar</button><button onclick="go(3)" class="flex-1 bg-black text-white py-4 rounded-2xl font-black">Continuar → Gerar Tag</button></div></div>
-
-<div id="step3" class="hidden">
-<div class="bg-gray-900 text-white rounded-3xl p-6 mb-6 flex gap-6 items-center"><div id="qrcode-final" class="bg-white p-3 rounded-2xl"></div><div><p class="font-black text-lg">Tag pronta para gravação</p><p id="link-final" class="text-cyan-400 text-xs break-all"></p><p class="text-gray-400 text-[11px] mt-2">Custo plaquinha: R$8 | Você vende por R$49,90<br>Esse QR já tem sistema automático de localização</p></div></div>
-<button id="btnSalvar" class="w-full bg-cyan-400 text-black py-5 rounded-2xl font-black text-xl glow">🚀 ATIVAR PROTEÇÃO E GERAR QR CODE</button>
-<div id="ok" class="hidden mt-6 bg-green-50 border-2 border-green-400 rounded-2xl p-6 text-center"><p class="font-black text-green-600 text-xl">✅ Pet protegido com sucesso!</p><p class="text-sm mt-2">Link curto para plaquinha:</p><p id="link-curto" class="font-mono bg-black text-white px-3 py-2 rounded-xl mt-2 inline-block text-sm"></p><p class="text-xs text-gray-500 mt-3">Já está aparecendo no mapa ao vivo acima. Quando alguém escanear, você será avisado automaticamente.</p></div>
-</div>
-
-</div>
-</section>
-
+<footer class="text-center p-8 text-[11px] text-gray-500">MapaPet Teixeira • Proteção QR + NFC</footer>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBBnA9orBCf3j1_3nRHWcIctLe7aKMgcI8",
-  authDomain: "mapapet-ad359.firebaseapp.com",
-  projectId: "mapapet-ad359",
-  storageBucket: "mapapet-ad359.firebasestorage.app",
-  messagingSenderId: "268931015194",
-  appId: "1:268931015194:web:5ae634751c3be46ebe67a3"
-};
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-let fotoBase64 = "";
-document.getElementById('petFoto').addEventListener('change', e=>{
-  const r=new FileReader();
-  r.onload=ev=>{
-    fotoBase64=ev.target.result;
-    const img=document.getElementById('preview');
-    img.src=fotoBase64;
-    img.classList.remove('hidden');
-  };
-  r.readAsDataURL(e.target.files[0]);
+import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const firebaseConfig = { apiKey: "AIzaSyBBnA9orBCf3j1_3nRHWcIctLe7aKMgcI8", authDomain: "mapapet-ad359.firebaseapp.com", projectId: "mapapet-ad359", storageBucket: "mapapet-ad359.firebasestorage.app", messagingSenderId: "268931015194", appId: "1:268931015194:web:5ae634751c3be46ebe67a3" };
+const app = initializeApp(firebaseConfig); const db = getFirestore(app);
+const map = L.map('map',{zoomControl:false}).setView([-17.5392,-39.7417],13); L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map); L.control.zoom({position:'bottomright'}).addTo(map);
+let markers=[]; function gid(){return Math.random().toString(36).substring(2,7).toUpperCase();}
+const q = query(collection(db,'clientes'), orderBy('criadoEm','desc'));
+onSnapshot(q, snap=>{
+  markers.forEach(m=>map.removeLayer(m)); markers=[]; let c=0, perd=0;
+  snap.forEach(doc=>{ const d=doc.data(); if(d.ativo===false) return; const lat=d.lat||(-17.5392+(Math.random()-0.5)*0.08); const lng=d.lng||(-39.7417+(Math.random()-0.5)*0.08); const isPerd=d.status==='perdido'; const color=isPerd?'#f97316':'#22d3ee'; const m=L.circleMarker([lat,lng],{radius:isPerd?15:9,color,fillColor:color,fillOpacity:0.9}).addTo(map); m.bindPopup((isPerd?'🚨 ':'🐾 ')+d.petNome); markers.push(m); c++; if(isPerd) perd++; });
+  document.getElementById('count').textContent=c+' pets'; document.getElementById('tPerd').textContent=perd;
 });
-
-window.go = (n)=>{
-  document.getElementById('step1').classList.add('hidden');
-  document.getElementById('step2').classList.add('hidden');
-  document.getElementById('step3').classList.add('hidden');
-  document.getElementById('step'+n).classList.remove('hidden');
-  ['s1','s2','s3'].forEach((id,i)=>{
-    const el=document.getElementById(id);
-    el.className = (i+1<=n) ? 'bg-black text-white w-10 h-10 rounded-full flex items-center justify-center font-black' : 'bg-gray-200 w-10 h-10 rounded-full flex items-center justify-center font-black';
-  });
-};
-
-function gid(){ return Math.random().toString(36).substring(2,7).toUpperCase(); }
-
-new QRCode(document.getElementById('qrcode-hero'), { text: 'https://mapapet-ad359.web.app', width: 70, height: 70 });
-new QRCode(document.getElementById('qrcode-scan'), { text: 'https://mapapet-ad359.web.app', width: 90, height: 90 });
-
-const liveMap = L.map('liveMap', { zoomControl:false }).setView([-17.5392, -39.7417], 13);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(liveMap);
-
-const petsNearby = document.getElementById('petsNearby');
-const liveNotifications = document.getElementById('liveNotifications');
-const markers = [];
-
-function addMarker(lat,lng,nome){
-  const m = L.circleMarker([lat,lng], { radius:12, color:'#22d3ee', fillColor:'#22d3ee', fillOpacity:0.9 }).addTo(liveMap);
-  m.bindPopup('🚨 '+nome+' • agora').openPopup();
-  markers.push(m);
-}
-
-async function initialLoad(){
-  try{
-    const q = query(collection(db, "notificacoes"), orderBy("data","desc"));
-    const snap = await getDocs(q);
-    let count=0;
-    snap.forEach(doc=>{
-      const d=doc.data();
-      if(d.lat){ addMarker(d.lat,d.lng,d.petNome||'Pet'); count++; }
-    });
-    document.getElementById('count-pets').textContent = count + ' pets';
-    document.getElementById('statToday').textContent = count;
-    document.getElementById('notifBadge').textContent = '🔔 '+count;
-    if(count===0){
-      for(let i=0;i<6;i++){
-        const lat=-17.5392+(Math.random()-0.5)*0.08;
-        const lng=-39.7417+(Math.random()-0.5)*0.08;
-        L.circleMarker([lat,lng], { radius:8, color:'#22d3ee', fillOpacity:0.5 }).addTo(liveMap);
-      }
-      petsNearby.innerHTML = '<div class="bg-black/50 border border-white/10 rounded-xl p-3 flex gap-3"><img src="https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=100" class="w-14 h-14 rounded-xl object-cover"><div><p class="font-bold text-sm">Luna</p><p class="text-[11px] text-gray-400">Golden Retriever • 2 anos</p><p class="text-[11px] text-cyan-400 mt-1">📍 0.8km • Centro</p></div></div>';
-      liveNotifications.innerHTML = '<div class="bg-white/5 border border-white/10 rounded-xl p-3"><p class="text-xs font-bold">💬 Sistema aguardando primeiro scan...</p><p class="text-[10px] text-gray-400">Quando alguém escanear, aparece aqui ao vivo</p></div>';
-    }
-  }catch(e){ console.error(e); }
-}
-initialLoad();
-
-// TEMPO REAL - ATUALIZA SEM F5 - SISTEMA AUTOMATICO
-const qLive = query(collection(db, "notificacoes"), orderBy("data","desc"));
-onSnapshot(qLive, (snap)=>{
-  snap.docChanges().forEach(change=>{
-    if(change.type==='added'){
-      const d=change.doc.data();
-      const hora = new Date().toLocaleTimeString();
-      if(d.lat){
-        addMarker(d.lat,d.lng,d.petNome||'Pet');
-        const total = document.querySelectorAll('.leaflet-marker-icon').length + markers.length;
-        document.getElementById('count-pets').textContent = total + ' pets';
-        document.getElementById('statToday').textContent = total;
-        document.getElementById('notifBadge').textContent = '🔔 '+total;
-        const div = document.createElement('div');
-        div.className = 'bg-cyan-400/10 border border-cyan-400/30 rounded-xl p-3 animate-pulse';
-        div.innerHTML = '<p class="text-xs font-bold text-cyan-400">🚨 NOVO: '+d.petNome+' encontrado AGORA</p><p class="text-[10px] text-gray-300">📍 '+d.lat.toFixed(4)+', '+d.lng.toFixed(4)+' • '+hora+'</p><a href="https://www.google.com/maps?q='+d.lat+','+d.lng+'" target="_blank" class="text-[10px] text-cyan-400 underline">Ver no Google Maps</a>';
-        liveNotifications.prepend(div);
-      } else {
-        const div = document.createElement('div');
-        div.className = 'bg-white/5 border border-white/10 rounded-xl p-3';
-        div.innerHTML = '<p class="text-xs font-bold">👀 Scan: '+(d.petNome||'Pet')+' visualizado</p><p class="text-[10px] text-gray-400">'+hora+' • Código '+d.shortId+'</p>';
-        liveNotifications.prepend(div);
-      }
-      // Limita a 10 notificacoes
-      while(liveNotifications.children.length>10) liveNotifications.removeChild(liveNotifications.lastChild);
-    }
-  });
-});
-
-// SALVAR CLIENTE
-document.getElementById('btnSalvar').addEventListener('click', async ()=>{
-  const tutorNome=document.getElementById('tutorNome').value.trim();
-  const tutorWhats=document.getElementById('tutorWhats').value.replace(/\D/g,'');
-  const petNome=document.getElementById('petNome').value.trim();
-  if(!tutorNome||!tutorWhats||!petNome){ alert('Preencha Nome do tutor, WhatsApp e Nome do pet'); return; }
-  const btn=document.getElementById('btnSalvar');
-  btn.textContent='ATIVANDO...'; btn.disabled=true;
+let fotoBase64=""; document.getElementById('petFoto').addEventListener('change', e=>{ const file=e.target.files[0]; if(!file) return; document.getElementById('fotoLabel').textContent='✅ Foto carregada!'; const r=new FileReader(); r.onload=ev=>{ const img=new Image(); img.onload=()=>{ const canvas=document.createElement('canvas'); const max=600; let w=img.width,h=img.height; if(w>max||h>max){ if(w>h){h=h*max/w;w=max;}else{w=w*max/h;h=max;} } canvas.width=w; canvas.height=h; canvas.getContext('2d').drawImage(img,0,0,w,h); fotoBase64=canvas.toDataURL('image/jpeg',0.6); document.getElementById('preview').src=fotoBase64; document.getElementById('preview').classList.remove('hidden'); }; img.src=ev.target.result; }; r.readAsDataURL(file); });
+window.copiarLink=()=>{ navigator.clipboard.writeText(document.getElementById('link').textContent); alert('Link NFC copiado!'); };
+document.getElementById('btnSalvar').addEventListener('click', async()=>{
+  if(!document.getElementById('lgpd').checked){alert('Aceite LGPD');return;}
+  const tutorNome=document.getElementById('tutorNome').value.trim(); const tutorWhats=document.getElementById('tutorWhats').value.replace(/\D/g,''); const petNome=document.getElementById('petNome').value.trim();
+  if(!tutorNome||!tutorWhats||!petNome){alert('Preencha Tutor, Whats e Pet');return;}
+  if(!fotoBase64){alert('Foto obrigatória!');return;}
+  const btn=document.getElementById('btnSalvar'); btn.textContent='Salvando...'; btn.disabled=true;
   const shortId=gid();
-  try{
-    await addDoc(collection(db,"clientes"), {
-      shortId, donoNome:tutorNome, telefone:tutorWhats,
-      email:document.getElementById('tutorEmail').value,
-      endereco:document.getElementById('tutorEndereco').value,
-      petNome, raca:document.getElementById('petRaca').value,
-      cor:document.getElementById('petCor').value,
-      foto:fotoBase64, criadoEm:serverTimestamp()
-    });
-    const link='https://mapapet-ad359.web.app/pet-final.html?sid='+shortId;
-    const linkCurto='https://mapapet-ad359.web.app/p/'+shortId;
-    document.getElementById('link-final').textContent=link;
-    document.getElementById('link-curto').textContent=linkCurto;
-    document.getElementById('qrcode-final').innerHTML='';
-    new QRCode(document.getElementById('qrcode-final'), { text:link, width:110, height:110 });
-    document.getElementById('ok').classList.remove('hidden');
-    btn.textContent='✅ PROTEGIDO!';
-    window.scrollTo({top:document.getElementById('ok').offsetTop, behavior:'smooth'});
-  }catch(e){ alert(e.message); btn.textContent='🚀 ATIVAR PROTEÇÃO E GERAR QR CODE'; btn.disabled=false; }
+  await addDoc(collection(db,'clientes'),{shortId, donoNome:tutorNome, telefone:tutorWhats, petNome, raca:document.getElementById('petRaca').value, status:document.getElementById('petStatus').value, recompensa:document.getElementById('recompensa').value, endereco:document.getElementById('petEndereco').value||'Teixeira de Freitas', foto:fotoBase64, lat:-17.5392+(Math.random()-0.5)*0.04, lng:-39.7417+(Math.random()-0.5)*0.04, criadoEm:serverTimestamp(), ativo:true, petshopId:'publico'});
+  const link=`https://mapapet-ad359.web.app/pet-final.html?sid=${shortId}`;
+  document.getElementById('qrBox').classList.remove('hidden'); document.getElementById('qrcode').innerHTML=''; new QRCode(document.getElementById('qrcode'),{text:link,width:140,height:140}); document.getElementById('link').textContent=link; document.getElementById('abrirLink').href=link; btn.textContent='🚀 GERAR QR CODE + NFC'; btn.disabled=false;
 });
-</script>
-</body>
-</html>
+</script></body></html>
